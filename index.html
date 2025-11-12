@@ -176,7 +176,8 @@
             font-weight: bold;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            font-family: 'Courier New', monospace;
+            letter-spacing: 8px;
+            padding-left: 8px;
         }
         
         .pair-box.hidden {
@@ -211,7 +212,10 @@
             border: 3px solid #ddd;
             border-radius: 10px;
             text-transform: uppercase;
-            font-family: 'Courier New', monospace;
+            letter-spacing: 5px;
+            padding-left: 5px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: bold;
         }
         
         .guess-input.correct {
@@ -244,6 +248,18 @@
             margin-top: 20px;
         }
         
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+        
+        .button-grid button {
+            margin: 0;
+        }
+        
         .hide-button {
             background: #f44336;
             font-size: 1.2em;
@@ -259,7 +275,7 @@
     <div class="container">
         <h1>Memo Trainer</h1>
         
-        <div class="preset-section">
+        <div class="preset-section" id="presetSection">
             <h2>Select Preset</h2>
             <div class="preset-buttons">
                 <button class="preset-btn active" onclick="setPreset('edges')" id="edgesBtn">Edges</button>
@@ -268,21 +284,21 @@
             <div class="restriction-display" id="restrictionDisplay"></div>
         </div>
         
-        <div class="preset-section">
+        <div class="preset-section" id="settingsSection">
             <h2>Game Settings</h2>
             <div class="settings">
                 <label>
                     Number of Pairs:
-                    <input type="number" id="pairCount" value="3" min="1" max="12">
+                    <input type="number" id="pairCount" value="6" min="1" max="12">
                 </label>
                 <label>
                     Number of Rows:
-                    <input type="number" id="rowCount" value="1" min="1" max="6">
+                    <input type="number" id="rowCount" value="2" min="1" max="6">
                 </label>
             </div>
         </div>
         
-        <div class="controls">
+        <div class="controls" id="generateControls">
             <button onclick="generatePairs()">Generate New Pairs</button>
         </div>
         
@@ -297,9 +313,11 @@
         <div class="input-section" id="inputSection" style="display: none;">
             <h2 style="text-align: center; margin-bottom: 20px;">Enter Your Guess</h2>
             <div class="guess-inputs" id="guessInputs"></div>
-            <div class="controls">
+            <div class="button-grid">
                 <button onclick="checkGuess()">Check Answer</button>
                 <button onclick="showAnswer()">Show Answer</button>
+                <button onclick="backToSettings()" id="backBtn" style="display: none;">Back to Settings</button>
+                <button onclick="goNext()" id="nextBtn" style="display: none;">Go Next</button>
             </div>
         </div>
         
@@ -339,7 +357,21 @@
             document.getElementById('cornersBtn').classList.remove('active');
             document.getElementById(preset + 'Btn').classList.add('active');
             
+            // Set preset-specific defaults
+            if (preset === 'edges') {
+                document.getElementById('pairCount').value = 6;
+                document.getElementById('rowCount').value = 2;
+            } else if (preset === 'corners') {
+                document.getElementById('pairCount').value = 4;
+                document.getElementById('rowCount').value = 1;
+            }
+            
             updateRestrictionDisplay();
+            
+            // Show settings sections when changing preset
+            document.getElementById('presetSection').style.display = 'block';
+            document.getElementById('settingsSection').style.display = 'block';
+            document.getElementById('generateControls').style.display = 'block';
             
             document.getElementById('lettersDisplay').innerHTML = '';
             document.getElementById('hideControls').style.display = 'none';
@@ -388,7 +420,7 @@
             
             const available = new Set(allLetters);
             const pairs = [];
-            const usedLetters = new Set(); // Track all used letters
+            const usedLetters = new Set();
             
             for (let i = 0; i < count; i++) {
                 if (available.size < 2) {
@@ -451,6 +483,11 @@
             
             currentPairs = pairs;
             displayPairs();
+            
+            // Hide settings sections after generating
+            document.getElementById('presetSection').style.display = 'none';
+            document.getElementById('settingsSection').style.display = 'none';
+            document.getElementById('generateControls').style.display = 'none';
             
             document.getElementById('hideControls').style.display = 'block';
             document.getElementById('inputSection').style.display = 'none';
@@ -527,7 +564,6 @@
                             if (i < currentPairs.length - 1) {
                                 document.getElementById(`guess${i + 1}`).focus();
                             } else {
-                                // Last input - check answer on Enter
                                 e.target.blur();
                             }
                         }
@@ -575,11 +611,41 @@
                 result.textContent = `${correct} out of ${currentPairs.length} correct (Memorized in ${memorizeTime}s)`;
                 result.className = 'result error';
             }
+            
+            // Show the answers automatically
+            showAnswer();
+            
+            // Show "Go Next" and "Back to Settings" buttons after checking
+            document.getElementById('nextBtn').style.display = 'inline-block';
+            document.getElementById('backBtn').style.display = 'inline-block';
         }
         
         function showAnswer() {
             const boxes = document.querySelectorAll('.pair-box');
             boxes.forEach(box => box.classList.remove('hidden'));
+        }
+        
+        function backToSettings() {
+            // Show settings sections
+            document.getElementById('presetSection').style.display = 'block';
+            document.getElementById('settingsSection').style.display = 'block';
+            document.getElementById('generateControls').style.display = 'block';
+            
+            // Hide game sections
+            document.getElementById('lettersDisplay').innerHTML = '';
+            document.getElementById('hideControls').style.display = 'none';
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('result').textContent = '';
+            document.getElementById('timerDisplay').textContent = '';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+        
+        function goNext() {
+            // Hide "Go Next" button
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            // Generate new pairs with same settings
+            generatePairs();
         }
         
         updateRestrictionDisplay();
