@@ -29,6 +29,153 @@
             max-width: 900px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .settings-icon {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+        
+        .settings-icon:hover {
+            background: #5568d3;
+            transform: scale(1.1);
+        }
+        
+        .help-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: help;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+        
+        .help-icon:hover {
+            background: #5568d3;
+        }
+        
+        .tooltip {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 300px;
+            font-size: 0.9em;
+            line-height: 1.5;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .help-icon:hover + .tooltip {
+            display: block;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .modal-content textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+        
+        .modal-content label {
+            display: block;
+            margin: 15px 0 5px 0;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .modal-content input[type="text"],
+        .modal-content input[type="number"],
+        .modal-content select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            margin: 0;
+        }
+        
+        .close-modal {
+            background: #f44336;
+        }
+        
+        .close-modal:hover {
+            background: #d32f2f;
         }
         
         h1 {
@@ -57,6 +204,7 @@
             gap: 15px;
             justify-content: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
         .preset-btn {
@@ -274,13 +422,20 @@
 </head>
 <body>
     <div class="container">
+        <div class="settings-icon" onclick="openCustomSettings()">⚙️</div>
+        <div class="help-icon">?</div>
+        <div class="tooltip">
+            The pairs of letters indicate letters that cannot occur at the same time throughout the entire memo. In blind solving, this would correspond to not hitting the same piece twice.
+        </div>
+        
         <h1>Memo Trainer</h1>
         
         <div class="preset-section" id="presetSection">
             <h2>Select Preset</h2>
-            <div class="preset-buttons">
+            <div class="preset-buttons" id="presetButtons">
                 <button class="preset-btn active" onclick="setPreset('edges')" id="edgesBtn">Edges</button>
                 <button class="preset-btn" onclick="setPreset('corners')" id="cornersBtn">Corners</button>
+                <button class="preset-btn" onclick="setPreset('wings')" id="wingsBtn">Wings</button>
             </div>
             <div class="restriction-display" id="restrictionDisplay"></div>
         </div>
@@ -290,7 +445,7 @@
             <div class="settings">
                 <label>
                     Number of Pairs:
-                    <input type="number" id="pairCount" value="6" min="1" max="12">
+                    <input type="number" id="pairCount" value="6" min="1" max="24">
                 </label>
                 <label>
                     Number of Rows:
@@ -327,6 +482,39 @@
         
         <div class="result" id="result"></div>
     </div>
+    
+    <div class="modal" id="customSettingsModal">
+        <div class="modal-content">
+            <h2>Custom Restrictions</h2>
+            
+            <label>Preset Name:</label>
+            <input type="text" id="customPresetName" placeholder="My Custom Preset">
+            
+            <label>Restriction Type:</label>
+            <select id="customRestrictionType">
+                <option value="pairs">Pairs (e.g., A, Q)</option>
+                <option value="groups">Groups (e.g., A, E, R)</option>
+                <option value="none">No restrictions</option>
+            </select>
+            
+            <label>Restrictions (one per line):</label>
+            <textarea id="customRestrictions" placeholder="For pairs: A, Q&#10;For groups: A, E, R&#10;One restriction per line"></textarea>
+            
+            <label>Forbidden Letters (comma-separated):</label>
+            <input type="text" id="customForbidden" placeholder="C, X">
+            
+            <label>Default Pairs:</label>
+            <input type="number" id="customDefaultPairs" value="6" min="1" max="24">
+            
+            <label>Default Rows:</label>
+            <input type="number" id="customDefaultRows" value="2" min="1" max="6">
+            
+            <div class="modal-buttons">
+                <button onclick="saveCustomPreset()">Save Custom Preset</button>
+                <button class="close-modal" onclick="closeCustomSettings()">Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const presets = {
@@ -345,6 +533,11 @@
                     ['A', 'E', 'R'], ['B', 'N', 'Q'], ['C', 'M', 'J'], ['D', 'F', 'I'],
                     ['G', 'L', 'U'], ['H', 'S', 'X'], ['K', 'V', 'P'], ['O', 'T', 'W']
                 ],
+                forbidden: ['C']
+            },
+            wings: {
+                type: 'none',
+                restrictions: [],
                 forbidden: ['C']
             }
         };
@@ -365,6 +558,114 @@
             if (savedRows) {
                 document.getElementById('rowCount').value = savedRows;
             }
+            
+            // Load custom preset if it exists
+            loadCustomPreset();
+        }
+        
+        function loadCustomPreset() {
+            const customPresetData = localStorage.getItem('customPreset');
+            if (customPresetData) {
+                try {
+                    const data = JSON.parse(customPresetData);
+                    presets['custom'] = data.preset;
+                    
+                    // Add custom preset button if it doesn't exist
+                    if (!document.getElementById('customBtn')) {
+                        const customBtn = document.createElement('button');
+                        customBtn.className = 'preset-btn';
+                        customBtn.id = 'customBtn';
+                        customBtn.textContent = data.name || 'Custom';
+                        customBtn.onclick = () => setPreset('custom');
+                        document.getElementById('presetButtons').appendChild(customBtn);
+                    }
+                } catch (e) {
+                    console.error('Error loading custom preset:', e);
+                }
+            }
+        }
+        
+        function openCustomSettings() {
+            document.getElementById('customSettingsModal').classList.add('active');
+            
+            // Pre-fill with existing custom preset if it exists
+            const customPresetData = localStorage.getItem('customPreset');
+            if (customPresetData) {
+                try {
+                    const data = JSON.parse(customPresetData);
+                    document.getElementById('customPresetName').value = data.name || '';
+                    document.getElementById('customRestrictionType').value = data.preset.type;
+                    
+                    // Format restrictions for display
+                    let restrictionsText = '';
+                    if (data.preset.type === 'pairs' || data.preset.type === 'groups') {
+                        restrictionsText = data.preset.restrictions.map(r => r.join(', ')).join('\n');
+                    }
+                    document.getElementById('customRestrictions').value = restrictionsText;
+                    document.getElementById('customForbidden').value = data.preset.forbidden.join(', ');
+                    document.getElementById('customDefaultPairs').value = data.defaultPairs || 6;
+                    document.getElementById('customDefaultRows').value = data.defaultRows || 2;
+                } catch (e) {
+                    console.error('Error loading custom preset for editing:', e);
+                }
+            }
+        }
+        
+        function closeCustomSettings() {
+            document.getElementById('customSettingsModal').classList.remove('active');
+        }
+        
+        function saveCustomPreset() {
+            const name = document.getElementById('customPresetName').value.trim() || 'Custom';
+            const type = document.getElementById('customRestrictionType').value;
+            const restrictionsText = document.getElementById('customRestrictions').value.trim();
+            const forbiddenText = document.getElementById('customForbidden').value.trim();
+            const defaultPairs = parseInt(document.getElementById('customDefaultPairs').value);
+            const defaultRows = parseInt(document.getElementById('customDefaultRows').value);
+            
+            // Parse restrictions
+            let restrictions = [];
+            if (type !== 'none' && restrictionsText) {
+                const lines = restrictionsText.split('\n');
+                restrictions = lines.map(line => {
+                    return line.split(',').map(l => l.trim().toUpperCase()).filter(l => l);
+                }).filter(arr => arr.length > 0);
+            }
+            
+            // Parse forbidden letters
+            const forbidden = forbiddenText ? forbiddenText.split(',').map(l => l.trim().toUpperCase()).filter(l => l) : [];
+            
+            const customPreset = {
+                type: type,
+                restrictions: restrictions,
+                forbidden: forbidden
+            };
+            
+            const customData = {
+                name: name,
+                preset: customPreset,
+                defaultPairs: defaultPairs,
+                defaultRows: defaultRows
+            };
+            
+            localStorage.setItem('customPreset', JSON.stringify(customData));
+            
+            // Add to presets
+            presets['custom'] = customPreset;
+            
+            // Update or create button
+            let customBtn = document.getElementById('customBtn');
+            if (!customBtn) {
+                customBtn = document.createElement('button');
+                customBtn.className = 'preset-btn';
+                customBtn.id = 'customBtn';
+                customBtn.onclick = () => setPreset('custom');
+                document.getElementById('presetButtons').appendChild(customBtn);
+            }
+            customBtn.textContent = name;
+            
+            closeCustomSettings();
+            alert('Custom preset saved!');
         }
         
         function saveDefaults() {
@@ -382,7 +683,12 @@
             
             document.getElementById('edgesBtn').classList.remove('active');
             document.getElementById('cornersBtn').classList.remove('active');
-            document.getElementById(preset + 'Btn').classList.add('active');
+            document.getElementById('wingsBtn').classList.remove('active');
+            const customBtn = document.getElementById('customBtn');
+            if (customBtn) customBtn.classList.remove('active');
+            
+            const activeBtn = document.getElementById(preset + 'Btn');
+            if (activeBtn) activeBtn.classList.add('active');
             
             // Set preset-specific defaults
             if (preset === 'edges') {
@@ -391,6 +697,15 @@
             } else if (preset === 'corners') {
                 document.getElementById('pairCount').value = 4;
                 document.getElementById('rowCount').value = 1;
+            } else if (preset === 'wings') {
+                document.getElementById('pairCount').value = 12;
+                document.getElementById('rowCount').value = 3;
+            } else if (preset === 'custom') {
+                const customData = JSON.parse(localStorage.getItem('customPreset'));
+                if (customData) {
+                    document.getElementById('pairCount').value = customData.defaultPairs || 6;
+                    document.getElementById('rowCount').value = customData.defaultRows || 2;
+                }
             }
             
             updateRestrictionDisplay();
@@ -417,7 +732,7 @@
                 preset.restrictions.forEach(([l1, l2]) => {
                     const tag = document.createElement('div');
                     tag.className = 'restriction-tag';
-                    tag.textContent = `${l1} ↔ ${l2}`;
+                    tag.textContent = `${l1}, ${l2}`;
                     display.appendChild(tag);
                 });
             } else if (preset.type === 'groups') {
@@ -427,6 +742,12 @@
                     tag.textContent = group.join(', ');
                     display.appendChild(tag);
                 });
+            } else if (preset.type === 'none') {
+                const tag = document.createElement('div');
+                tag.className = 'restriction-tag';
+                tag.style.background = '#4caf50';
+                tag.textContent = 'No restrictions - all pairs allowed!';
+                display.appendChild(tag);
             }
             
             if (preset.forbidden.length > 0) {
@@ -445,14 +766,37 @@
             
             allLetters = allLetters.filter(l => !preset.forbidden.includes(l));
             
-            const available = new Set(allLetters);
             const pairs = [];
-            const usedLetters = new Set();
             
+            // For restricted presets, allow letter reuse after exhausting available letters
             for (let i = 0; i < count; i++) {
+                const available = new Set(allLetters);
+                const usedInThisPair = new Set();
+                
+                // Remove letters that conflict with already used letters in this iteration
+                pairs.forEach(existingPair => {
+                    existingPair.forEach(usedLetter => {
+                        if (preset.type === 'pairs') {
+                            preset.restrictions.forEach(([l1, l2]) => {
+                                if (usedLetter === l1) available.delete(l2);
+                                if (usedLetter === l2) available.delete(l1);
+                            });
+                        } else if (preset.type === 'groups') {
+                            preset.restrictions.forEach(group => {
+                                if (group.includes(usedLetter)) {
+                                    group.forEach(l => {
+                                        if (l !== usedLetter) available.delete(l);
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+                
                 if (available.size < 2) {
-                    alert('Cannot generate more pairs with current restrictions');
-                    break;
+                    // Reset available pool if we run out
+                    available.clear();
+                    allLetters.forEach(l => available.add(l));
                 }
                 
                 const availableArray = Array.from(available);
@@ -460,7 +804,7 @@
                 // Pick first letter
                 const letter1 = availableArray[Math.floor(Math.random() * availableArray.length)];
                 available.delete(letter1);
-                usedLetters.add(letter1);
+                usedInThisPair.add(letter1);
                 
                 // Remove restricted letters based on first choice
                 if (preset.type === 'pairs') {
@@ -481,29 +825,13 @@
                 // Pick second letter
                 const availableArray2 = Array.from(available);
                 if (availableArray2.length === 0) {
-                    alert('Cannot generate more pairs with current restrictions');
-                    break;
+                    // If no available letters, reset and try again
+                    available.clear();
+                    allLetters.filter(l => l !== letter1).forEach(l => available.add(l));
                 }
                 
-                const letter2 = availableArray2[Math.floor(Math.random() * availableArray2.length)];
-                available.delete(letter2);
-                usedLetters.add(letter2);
-                
-                // Remove restricted letters based on second choice
-                if (preset.type === 'pairs') {
-                    preset.restrictions.forEach(([l1, l2]) => {
-                        if (letter2 === l1) available.delete(l2);
-                        if (letter2 === l2) available.delete(l1);
-                    });
-                } else if (preset.type === 'groups') {
-                    preset.restrictions.forEach(group => {
-                        if (group.includes(letter2)) {
-                            group.forEach(l => {
-                                if (l !== letter2) available.delete(l);
-                            });
-                        }
-                    });
-                }
+                const finalAvailable = Array.from(available);
+                const letter2 = finalAvailable[Math.floor(Math.random() * finalAvailable.length)];
                 
                 pairs.push([letter1, letter2]);
             }
@@ -665,11 +993,13 @@
             document.getElementById('result').textContent = '';
             document.getElementById('timerDisplay').textContent = '';
             document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('backBtn').style.display = 'none';
         }
         
         function goNext() {
-            // Hide "Go Next" button
+            // Hide "Go Next" and "Back" buttons
             document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('backBtn').style.display = 'none';
             
             // Generate new pairs with same settings
             generatePairs();
