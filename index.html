@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memo Trainer</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
     <style>
         * {
             margin: 0;
@@ -353,6 +354,29 @@
         let startTime = null;
         let memorizeTime = null;
         
+        // Load saved defaults on page load
+        function loadDefaults() {
+            const savedPairs = localStorage.getItem('defaultPairs');
+            const savedRows = localStorage.getItem('defaultRows');
+            
+            if (savedPairs) {
+                document.getElementById('pairCount').value = savedPairs;
+            }
+            if (savedRows) {
+                document.getElementById('rowCount').value = savedRows;
+            }
+        }
+        
+        function saveDefaults() {
+            const pairCount = document.getElementById('pairCount').value;
+            const rowCount = document.getElementById('rowCount').value;
+            
+            localStorage.setItem('defaultPairs', pairCount);
+            localStorage.setItem('defaultRows', rowCount);
+            
+            alert('Default settings saved!');
+        }
+        
         function setPreset(preset) {
             currentPreset = preset;
             
@@ -651,6 +675,7 @@
             generatePairs();
         }
         
+        loadDefaults();
         updateRestrictionDisplay();
     </script>
 </body>
